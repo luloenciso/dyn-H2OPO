@@ -45,7 +45,11 @@ This repository is licensed under the GNU GPLv3.
 
 ## Contact:
 
-If you have any questions, please contact luloenciso@gmail.com Or www.linkedin.com/in/luciano-enciso
+If you have any questions, please contact:
+
+luloenciso@gmail.com 
+
+www.linkedin.com/in/luciano-enciso
 
 I hope this is helpful! Let me know if you have any other questions.
 
