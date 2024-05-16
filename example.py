@@ -41,7 +41,7 @@ if simular_datos_tiempo_temp:
     if tipo_equipo == 'tm':
         temperatura, tiempo, tipo_curva = mod_dyn.generar_ciclos_termicos(ciclos=45, debug=False, temp_max=45, temp_min=10, tau=0.5)
     else:
-        temperatura, tiempo, tipo_curva = mod_dyn.generar_ciclos_termicos(ciclos=25, debug=True, temp_max=65)
+        temperatura, tiempo, tipo_curva = mod_dyn.generar_ciclos_termicos(ciclos=25, debug=False, temp_max=65)
 
 # Contenido de agua en celulosa inicial (%)
 wc_ini = 2.2
