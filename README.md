@@ -29,6 +29,16 @@ The modeled insulation it has the next characteristics:
 
 ![Water dynamics in paper-oil](example_gif_simulated/water_dinamic_in_paper_oil.gif)
 
+## References:
+This code and model are based on the following literature:
+* 2008 - Koch, M. - "RELIABLE MOISTURE DETERMINATION IN POWER TRANSFORMERS" - Doctorate Thesis
+* 2016 - Przybylek, P. - "Water Saturation Limit of Insulating Liquids and Hygroscopicity of Cellulose in Aspect of Moisture Determination in Oil-Paper Insulation" - IEEE Transactions on Dielectrics and Electrical Insulation - Vol 23, No 3
+* 2018 - Cigre Brochure 741 - "Moisture measurement and assessment in transformer insulation - Evaluation of chemical methods and moisture capacitive sensors"
+* 2013 - García, D.F. - "Determination of moisture diffusion coefficient for oil-impregnated Kraft-paper insulation" - Electrical Power and Energy Systems 53 - Elseiver
+
+## Note
+To obtain functional models as required, curve fitting of many curves published in the references was necessary. The code to perform these curve fittings is not included here at this time.
+
 ## License:
 
 This repository is licensed under the GNU GPLv3.
