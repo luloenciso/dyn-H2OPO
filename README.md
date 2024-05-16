@@ -21,7 +21,7 @@ Key features:
 ## Example of simulation
 The next gif is generated with matplotlib with a simulation resulted of using this model. 
 The modeled insulation it has the next characteristics:
-- initial cellulose water content: 2.1%
+- initial cellulose water content: 2.2%
 - Pressboard cellulose 
 - Condition cellulose: aged
 - Oil Acidity: 0.05 mg KOH/g
