@@ -10,10 +10,10 @@ Key features:
 * Simulate the water content dynamics in cellulose-oil insulation over time
 * Consider the temperature to which the insulation is subjected at each time step
 * Only mineral oil is considered
-* Select different types of cellulose (kraft paper or pressboard)
-* Select different conditions of cellulose (new or aged)
-* Include different qualities of dielectric oil modeled with oil acidity
-* Include different types of oil modeled with aromatic content
+* Use different types of cellulose (kraft paper or pressboard)
+* Use different conditions of cellulose (new or aged)
+* Include different qualities of dielectric oil modeled with oil acidity [mg KOH/g]
+* Include different types of oil modeled with aromatic content [%]
 * Use oil-cellulose water content relative saturation equilibrium curves
 
 ## License:
