@@ -2,7 +2,7 @@ dyn-H2PO
 ========
 dynamics of water (H2O) in Paper-Oil insulation
 
-This repository contains a model to simulate the water content dynamics in cellulose-oil insulation over time. The model takes into account the temperature to which the insulation is subjected at each time step. Only mineral oil is considered.
+This repository contains a time-dependent model to simulate the water content dynamics in cellulose-oil insulation. The model considers the diffusion of water in cellulose as if it were a single time constant (for small thicknesses). Only mineral oil is considered.
 
 Overview
 ---------
@@ -10,6 +10,7 @@ Key features:
 
 * Simulate the water content dynamics in cellulose-oil insulation over time
 * Consider the temperature to which the insulation is subjected at each time step
+* Simplified simulation that considers water diffusion in cellulose as a single time constant
 * Only mineral oil is considered
 * Use different types of cellulose (kraft paper or pressboard)
 * Use different conditions of cellulose (new or aged)
