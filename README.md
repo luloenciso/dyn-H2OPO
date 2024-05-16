@@ -18,6 +18,17 @@ Key features:
 * Include different types of oil modeled with aromatic content [%]
 * Use oil-cellulose water content relative saturation equilibrium curves
 
+## Example of simulation
+The next gif is generated with matplotlib with a simulation resulted of using this model. 
+The modeled insulation it has the next characteristics:
+- initial cellulose water content: 2.1%
+- Pressboard cellulose 
+- Condition cellulose: aged
+- Oil Acidity: 0.05 mg KOH/g
+- Oil Aromatic content: 15%
+
+![Water dynamics in paper-oil](example_gif_simulated/water_dinamic_in_paper_oil.gif)
+
 ## License:
 
 This repository is licensed under the GNU GPLv3.
