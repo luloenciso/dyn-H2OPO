@@ -49,7 +49,7 @@ If you have any questions, please contact:
 
 luloenciso@gmail.com 
 
-www.linkedin.com/in/luciano-enciso
+www.linkedin.com/in/luciano-enciso-diagnosticos-alta-tension
 
 I hope this is helpful! Let me know if you have any other questions.
 
