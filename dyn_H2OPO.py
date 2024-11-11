@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import root
 import tabulate
+from scipy.interpolate import PchipInterpolator
 
 # %% Funciones
 # Mathematical models to represent hygroscopic equilibrium curves.
@@ -43,8 +44,19 @@ def aplicar_henderson_pressboard_aged(rs,T):
     y = henderson_temp(rs/100, a, b, T)*100                   
     return y
 
+def aplicar_henderson_by_porcentage_aged(rs, T, porcentaje_of_aged):
+    y_new = aplicar_henderson_kraft_new(rs, T)
+    y_aged = aplicar_henderson_kraft_aged(rs, T)
+    a = 801.7375805852041
+    b = 0.013785064929149564
+    c = -1.7732846021876663
+    dp_val = a * np.exp(-b * porcentaje_of_aged) + c
+    percentaje_aged_new = 100/(200-800)*dp_val - 100*800/(200-800)
+    
+    return percentaje_aged_new/100 * y_aged + (1-percentaje_aged_new/100) * y_new
 
-def get_rs_con_contenido_agua_en_papel(func_henderson, wc, temp):
+
+def get_rs_con_contenido_agua_en_papel(func_henderson, wc, temp, tipo_celulosa):
     """
     Función que devuelve la saturación relativa del aceite para un determinado
     valor de contenido de agua en celulosa (wc) y temperatura (temp)
@@ -61,6 +73,7 @@ def get_rs_con_contenido_agua_en_papel(func_henderson, wc, temp):
         DESCRIPTION.
     temp : TYPE
         DESCRIPTION.
+    tipo_celulosa : String or Number
 
     Returns
     -------
@@ -68,8 +81,12 @@ def get_rs_con_contenido_agua_en_papel(func_henderson, wc, temp):
         rs - saturación relativa del aceite.
 
     """
-    def equation(rs):
-        return func_henderson(rs, temp) - wc
+    if isinstance(tipo_celulosa, (int, float)):
+        def equation(rs):
+            return func_henderson(rs, temp, tipo_celulosa) - wc
+    else:
+        def equation(rs):
+            return func_henderson(rs, temp) - wc
                         
     return root(equation, x0=0.0).x
 
@@ -274,7 +291,9 @@ def generar_ciclos_termicos(ciclos=None, debug=False,
 def simulacion_dinámica_de_agua_en_papel_aceite(tiempo, temperatura,
                                                 wc_ini, acidez_aceite,
                                                 tipo_equipo, tipo_celulosa,
-                                                c_aromatico_aceite):
+                                                c_aromatico_aceite,
+                                                horas=None,
+                                                graficar=False):
     """
     
 
@@ -291,9 +310,11 @@ def simulacion_dinámica_de_agua_en_papel_aceite(tiempo, temperatura,
         Valor de acidez del aceite en mg KOH/g (generalmente de 0.01 a 0.2).
     tipo_equipo : string
         si se trata de un transformador de potencia o un transformador de medición.
-    tipo_celulosa : string
+    tipo_celulosa : string or [0 - 100]
         ¿qué tipo de celulosa y su estado está en juego? (kraft - new, kraft - aged,
                                                           pressboard - new, pressboard - aged).
+        si es un numero entre 0 y 100 busca el valor promedio ponderdado entre el porcentaje de
+        envejecimiento de celulosa
     c_aromatico_aceite : float
         Contenido de aromatico que posee el aceite aislante en porcentaje [%]
         (generamente desde 1 a 20).
@@ -320,10 +341,19 @@ def simulacion_dinámica_de_agua_en_papel_aceite(tiempo, temperatura,
         masa_aceite = 62700
         masa_celulosa = 5000
     elif tipo_equipo == 'tm':
+        # densidad_aceite = 0.879
+        # volumen_aceite = 180
+        # masa_aceite = densidad_aceite * volumen_aceite
+        # masa_celulosa = 2 * masa_aceite
         densidad_aceite = 0.879
-        volumen_aceite = 50
+        volumen_aceite = 100
         masa_aceite = densidad_aceite * volumen_aceite
-        masa_celulosa = 2 * masa_aceite
+        masa_celulosa = 1.2 * masa_aceite
+    elif tipo_equipo == 'bushing':
+        densidad_aceite = 0.879
+        volumen_aceite = 20
+        masa_aceite = densidad_aceite * volumen_aceite
+        masa_celulosa = 10 * masa_aceite
         
     if tipo_celulosa == 'kraft - new':
         func_henderson = aplicar_henderson_kraft_new
@@ -333,14 +363,19 @@ def simulacion_dinámica_de_agua_en_papel_aceite(tiempo, temperatura,
         func_henderson = aplicar_henderson_pressboard_new
     elif tipo_celulosa == 'pressboard - aged':
         func_henderson = aplicar_henderson_pressboard_aged
+    elif 0 <= tipo_celulosa <= 100:
+        func_henderson = aplicar_henderson_by_porcentage_aged
     
     temp_ini = temperatura[0]
     
-    rs_ini = get_rs_con_contenido_agua_en_papel(func_henderson, wc_ini, temp_ini)[0]
+    rs_ini = get_rs_con_contenido_agua_en_papel(func_henderson, wc_ini, temp_ini, tipo_celulosa)[0]
     ws_ini = saturacion_de_agua_en_aceite(temp_ini, ac=acidez_aceite, ar=c_aromatico_aceite)
     ppm_agua = ppm_agua_en_aceite(rs_ini, ws_ini)
     masa_agua_aceite = masa_agua_en_aceite(rs_ini, ws_ini, masa_aceite)
-    wc_ini = func_henderson(rs_ini,temp_ini)
+    if isinstance(tipo_celulosa, (int, float)):
+        wc_ini = func_henderson(rs_ini,temp_ini, tipo_celulosa)
+    else:
+        wc_ini = func_henderson(rs_ini,temp_ini)
     wc_kg_celulosa = masa_de_agua_en_celulosa(wc_ini, masa_celulosa)
     
     # Valores iniciales de variables
@@ -349,6 +384,8 @@ def simulacion_dinámica_de_agua_en_papel_aceite(tiempo, temperatura,
     print(np.round(masa_agua_aceite, 2), 'kg de agua en aceite')
     print(np.round(wc_ini, 2), '% de agua en celulosa')
     print(np.round(wc_kg_celulosa, 2), 'kg de agua en celulosa')
+    print(acidez_aceite, 'mg KOH en aceite')
+    print(tipo_celulosa, 'usada')
     
     wc = []
     rs = []
@@ -379,15 +416,24 @@ def simulacion_dinámica_de_agua_en_papel_aceite(tiempo, temperatura,
             tipo_curva = 0
         else:
             tipo_curva = 1
-        # if tipo_curva[i]==0: 
+        
+        if temperatura[i] < 0:
+            temp = 0.01
+        
         if tipo_curva==0: 
             # ---- Calentamiento
             if rs_ini < 100:
-                rs_eq = get_rs_con_contenido_agua_en_papel(func_henderson, wc_ini, temp)[0]
-                wc_eq = func_henderson(rs_ini, temp) # nuevo equilibrio teórico a la nueva temperatura
+                rs_eq = get_rs_con_contenido_agua_en_papel(func_henderson, wc_ini, temp, tipo_celulosa)[0]
+                if isinstance(tipo_celulosa, (int,float)):
+                    wc_eq = func_henderson(rs_ini, temp, tipo_celulosa) # nuevo equilibrio teórico a la nueva temperatura
+                else:
+                    wc_eq = func_henderson(rs_ini, temp) # nuevo equilibrio teórico a la nueva temperatura
             else:
-                rs_eq = get_rs_con_contenido_agua_en_papel(func_henderson, wc_ini, temp)[0]
-                wc_eq = func_henderson(99.99, temp)
+                rs_eq = get_rs_con_contenido_agua_en_papel(func_henderson, wc_ini, temp, tipo_celulosa)[0]
+                if isinstance(tipo_celulosa, (int,float)):
+                    wc_eq = func_henderson(99.99, temp, tipo_celulosa) 
+                else:
+                    wc_eq = func_henderson(99.99, temp) 
                        
             wc_new = abs_desorp__humedad_papel(wc_ini, wc_eq, t, temp) # nuevo contenido de agua en papel
             
@@ -400,7 +446,7 @@ def simulacion_dinámica_de_agua_en_papel_aceite(tiempo, temperatura,
             if delta_wc < 0:
                 # el papel aún absorvería agua. Cuanto puede entregar el aceite?
                 # saturación relativa de equilibrio
-                rs_eq = get_rs_con_contenido_agua_en_papel(func_henderson, wc_new, temp)[0]
+                rs_eq = get_rs_con_contenido_agua_en_papel(func_henderson, wc_new, temp, tipo_celulosa)[0]
                 ppm_eq = rs_eq/100*ws_new
                 ppm_ini = rs_ini/100 *ws_ini
                 delta_ppm = ppm_ini - ppm_eq   # masa de agua liberada por aceite con rs_eq_new
@@ -439,18 +485,23 @@ def simulacion_dinámica_de_agua_en_papel_aceite(tiempo, temperatura,
         else:
             # ---- Enfriamiento
             if rs_ini < 100:
-                rs_new = get_rs_con_contenido_agua_en_papel(func_henderson, wc_ini, temp)[0]
+                rs_new = get_rs_con_contenido_agua_en_papel(func_henderson, wc_ini, temp, tipo_celulosa)[0]
                 ws_new = saturacion_de_agua_en_aceite(temp, ac=acidez_aceite, ar=c_aromatico_aceite) # saturación relativa a la nueva temperatura
                 ppm_new = rs_new/100*ws_new
                 ppm_ini = rs_ini/100 *ws_ini
-                wc_eq = func_henderson(rs_ini, temp) # nuevo equilibrio teórico a la nueva temperatura
+                if isinstance(tipo_celulosa, (int,float)):
+                    wc_eq = func_henderson(rs_ini, temp, tipo_celulosa) # nuevo equilibrio teórico a la nueva temperatura
+                else:   
+                    wc_eq = func_henderson(rs_ini, temp) # nuevo equilibrio teórico a la nueva temperatura
             else:
-                rs_new = get_rs_con_contenido_agua_en_papel(func_henderson, wc_ini, temp)[0]
+                rs_new = get_rs_con_contenido_agua_en_papel(func_henderson, wc_ini, temp, tipo_celulosa)[0]
                 ws_new = saturacion_de_agua_en_aceite(temp, ac=acidez_aceite, ar=c_aromatico_aceite) # saturación relativa a la nueva temperatura
                 ppm_new = rs_new/100*ws_new
                 ppm_ini = rs_ini/100 *ws_ini
-                wc_eq = func_henderson(99.99, temp)
-            
+                if isinstance(tipo_celulosa, (int,float)):
+                    wc_eq = func_henderson(99.99, temp, tipo_celulosa)
+                else:
+                    wc_eq = func_henderson(99.99, temp)
             
             masa_agua_aceite_ini = masa_agua_en_aceite(rs_ini, ws_ini, masa_aceite) # masa de agua inicial
             delta_ppm = ppm_ini - ppm_new   # masa de agua liberada por aceite con rs_eq_new
@@ -489,40 +540,41 @@ def simulacion_dinámica_de_agua_en_papel_aceite(tiempo, temperatura,
     # finaliza simulación. 
     # Representa graficamente algunas variables simuladas
     
-    fig_wc_celulosa_temp, ax = plt.subplots(1,1)
-    ax.plot(temperatura, wc)
-    ax.set_title('wc')
+    if graficar:
+        fig_wc_celulosa_temp, ax = plt.subplots(1,1)
+        ax.plot(temperatura, wc)
+        ax.set_title('wc')
+        
+        fig_wc_aceite_temp, ax = plt.subplots(1,1)
+        ax.scatter(temperatura, ppm)
+        ax.set_title('ppm')
+        
+        fig_wc_celulosa_tiempo, ax = plt.subplots(1,1)
+        ax.plot(tiempo, wc)
+        ax.set_title('wc')
+        
+        fig_rs_aceite_tiempo, ax = plt.subplots(1,1)
+        ax.plot(tiempo, rs)
+        ax.set_title('rs')
+        
+        fig_wc_aceite_celulosa_tiempo, [ax1, ax2] = plt.subplots(2,1)
+        ax1.plot(tiempo, ppm, label='ppm')
+        ax2.plot(tiempo, ws, label='ws')
+        ax22 = ax2.twinx()
+        ax22.plot(tiempo, temperatura, 'g--', label='temperatura')
+        ax22.set_ylim(0,100)
+        ax1.set_title('ppm')
+        # Combine labels for both axes
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        lines22, labels22 = ax22.get_legend_handles_labels()
+        ax22.legend(lines2 + lines22, labels2 + labels22, loc='best')
     
-    fig_wc_aceite_temp, ax = plt.subplots(1,1)
-    ax.scatter(temperatura, ppm)
-    ax.set_title('ppm')
-    
-    fig_wc_celulosa_tiempo, ax = plt.subplots(1,1)
-    ax.plot(tiempo, wc)
-    ax.set_title('wc')
-    
-    fig_rs_aceite_tiempo, ax = plt.subplots(1,1)
-    ax.plot(tiempo, rs)
-    ax.set_title('rs')
-    
-    fig_wc_aceite_celulosa_tiempo, [ax1, ax2] = plt.subplots(2,1)
-    ax1.plot(tiempo, ppm, label='ppm')
-    ax2.plot(tiempo, ws, label='ws')
-    ax22 = ax2.twinx()
-    ax22.plot(tiempo, temperatura, 'g--', label='temperatura')
-    ax22.set_ylim(0,100)
-    ax1.set_title('ppm')
-    # Combine labels for both axes
-    lines2, labels2 = ax2.get_legend_handles_labels()
-    lines22, labels22 = ax22.get_legend_handles_labels()
-    ax22.legend(lines2 + lines22, labels2 + labels22, loc='best')
-    
-    fig_rs_aceite_temperatura, ax = plt.subplots(1,1)
-    ax.plot(temperatura, rs)
-    ax.set_ylim(bottom=0, top=100)
-    ax.set_title('rs')
-    ax.set_xlabel('temperatura [°C]')
-    ax.set_ylabel('Saturación relativa del aceite [%]')
+        fig_rs_aceite_temperatura, ax = plt.subplots(1,1)
+        ax.plot(temperatura, rs)
+        ax.set_ylim(bottom=0, top=100)
+        ax.set_title('rs')
+        ax.set_xlabel('temperatura [°C]')
+        ax.set_ylabel('Saturación relativa del aceite [%]')
     
     
     # Genera diccionarios de salida
@@ -532,16 +584,19 @@ def simulacion_dinámica_de_agua_en_papel_aceite(tiempo, temperatura,
     dict_output['ws_aceite'] = ws
     dict_output['wc_aceite'] = ppm
     dict_output['wf_aceite'] = agua_libre
-    dict_output['tiempo'] = tiempo
-    dict_output['temperatura'] = temperatura
+    dict_output['tiempo'] = list(tiempo)
+    dict_output['temperatura'] = list(temperatura)
+    if not horas is None:
+        dict_output['hora_del_dia'] = horas
     
     dict_figs_output = {}
-    dict_figs_output['rs-temp'] = fig_rs_aceite_temperatura
-    dict_figs_output['rs-tiempo'] = fig_rs_aceite_tiempo
-    dict_figs_output['wc_celulosa-temperatura'] = fig_wc_celulosa_temp
-    dict_figs_output['wc_celulosa-tiempo'] = fig_wc_celulosa_tiempo
-    dict_figs_output['wc_aceite_celulosa-tiempo'] = fig_wc_aceite_celulosa_tiempo
-    
+    if graficar:
+        dict_figs_output['rs-temp'] = fig_rs_aceite_temperatura
+        dict_figs_output['rs-tiempo'] = fig_rs_aceite_tiempo
+        dict_figs_output['wc_celulosa-temperatura'] = fig_wc_celulosa_temp
+        dict_figs_output['wc_celulosa-tiempo'] = fig_wc_celulosa_tiempo
+        dict_figs_output['wc_aceite_celulosa-tiempo'] = fig_wc_aceite_celulosa_tiempo
+        
     
     return dict_output, dict_figs_output
 

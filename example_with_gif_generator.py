@@ -138,6 +138,7 @@ for i, temp in enumerate(temperatura[:]):
     ax.set_xlabel('Temperatura [°C]', fontsize=12, color='green')
     ax.set_ylabel('Saturación relativa del aceite [%]', fontsize=12, color='green')
     
+    
     if not temperatura_1 is None:
         ax3.plot(tiempo_1, temperatura_1, alpha=0.2, color='gray')
     ax3.plot(tiempo_2, temperatura_2, alpha=1, color='gray')
@@ -155,6 +156,7 @@ for i, temp in enumerate(temperatura[:]):
     # ax2.set_title('rs')
     # ax2.set_xlabel('tiempo [horas]', fontsize=12)
     ax2.set_ylabel('Contenido de agua en aceite [ppm]', fontsize=12, color='cornflowerblue')
+    
     
     if not len(casos_alarma) == 0:
         for caso, el in enumerate(casos_alarma):
