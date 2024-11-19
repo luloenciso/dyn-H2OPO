@@ -9,6 +9,7 @@ import dyn_H2OPO as mod_dyn
 import pandas as pd
 import numpy as np
 import tabulate
+import matplotlib.pyplot as plt
 
 
 abrir_datos = 'transformador'
