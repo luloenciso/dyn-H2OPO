@@ -234,7 +234,7 @@ def abs_desorp__humedad_aceite(rs_ini, rs_fin, t, T, d=None):
         return (rs_fin - rs_ini) * (1 - np.exp(-t/(tau/(60*60)))) + rs_ini
 
 def abs_desorp__humedad_papel(wc_ini, wc_fin, t, T, d=None):
-    tau = constate_tiempo_difusion_papel_aceite(wc_ini, T, d=None)
+    tau = constate_tiempo_difusion_papel_aceite(wc_ini, T, d=d)
     # print(tau/86400, 'días')
     if wc_ini <= wc_fin:  # condición de desorbsión
         return (wc_ini - wc_fin) * ( np.exp(-t/(tau/(60*60)))) + wc_fin
@@ -349,6 +349,7 @@ def simulacion_dinámica_de_agua_en_papel_aceite(tiempo, temperatura,
                                                 tipo_equipo, tipo_celulosa,
                                                 c_aromatico_aceite,
                                                 horas=None,
+                                                d=4,
                                                 graficar=False):
     """
     
@@ -491,7 +492,7 @@ def simulacion_dinámica_de_agua_en_papel_aceite(tiempo, temperatura,
                 else:
                     wc_eq = func_henderson(99.99, temp) 
                        
-            wc_new = abs_desorp__humedad_papel(wc_ini, wc_eq, t, temp) # nuevo contenido de agua en papel
+            wc_new = abs_desorp__humedad_papel(wc_ini, wc_eq, t, temp, d=d) # nuevo contenido de agua en papel
             
             # varía el contenido de humedad en celulosa
             # wc_new = wc_new + dt*0.2/(365*24)     # varía 0.2% por año pasado a horas
@@ -563,7 +564,7 @@ def simulacion_dinámica_de_agua_en_papel_aceite(tiempo, temperatura,
             delta_ppm = ppm_ini - ppm_new   # masa de agua liberada por aceite con rs_eq_new
             if delta_ppm < 0:
                 # el aceite aún absorvería agua. Cuanto puede entregar el papel?
-                wc_new = abs_desorp__humedad_papel(wc_ini, wc_eq, t, temp) # nuevo contenido de agua en papel con el tiempo de difusión
+                wc_new = abs_desorp__humedad_papel(wc_ini, wc_eq, t, temp, d=d) # nuevo contenido de agua en papel con el tiempo de difusión
                 delta_wc = wc_ini - wc_new # diferencia de contenidos de humedad
                 masa_de_agua_liberada = delta_wc/100*(masa_celulosa) # masa de agua que se liberó en el delta t
                 
@@ -589,7 +590,7 @@ def simulacion_dinámica_de_agua_en_papel_aceite(tiempo, temperatura,
                 masa_de_agua_liberada_aceite = delta_ppm * 10**-6 * masa_aceite
                 masa_de_agua_en_papel_ini = wc_ini/100*masa_celulosa
                 wc_eq = (masa_de_agua_en_papel_ini + masa_de_agua_liberada_aceite)/masa_celulosa * 100  # a cuanto debería llegar el papel en el equilibrio
-                wc_new = abs_desorp__humedad_papel(wc_ini, wc_eq, t, temp) # nuevo contenido de agua en papel con el tiempo de difusión
+                wc_new = abs_desorp__humedad_papel(wc_ini, wc_eq, t, temp, d=d) # nuevo contenido de agua en papel con el tiempo de difusión
                 # el papel pudo abosorver todo el agua?
                 
                 if wc_new <= wc_ini:
@@ -686,7 +687,7 @@ def simulacion_dinámica_de_agua_en_papel_aceite_con_capas(tiempo, temperatura,
                                                           tipo_equipo, tipo_celulosa,
                                                           c_aromatico_aceite,
                                                           n_layers=10,
-                                                          d=1,
+                                                          d=4,
                                                           horas=None,
                                                           graficar=False):
     """
